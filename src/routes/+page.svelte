@@ -9,6 +9,8 @@ This is your page!
   import Image from '$lib/components/Image.svelte';
   import RelatedLinks from '$lib/components/RelatedLinks.svelte';
   import RestaurantTable from '$lib/components/RestaurantTable.svelte';
+  import BigNumber from '$lib/components/BigNumber.svelte';
+  import Dashboard from '$lib/components/Dashboard.svelte';
 
   // Article metadata
   let headline = 'Become a force for good. Join our next class.';
@@ -53,7 +55,7 @@ This is your page!
   let selectedGrade = $state("");
 
   // Filter restaurants based on selected filters //
-  let restaurants = $derived(
+  let filteredRestaurants = $derived(
     data?.restaurants
       ? data.restaurants.filter(r => {
           if (selectedBorough !== '' && r.boro !== selectedBorough) return false;
@@ -65,8 +67,13 @@ This is your page!
       : []
   );
 
+  // Grade summary counts (reactive)
+  let countA = $derived(filteredRestaurants.filter(r => r.grade === 'A').length);
+  let countB = $derived(filteredRestaurants.filter(r => r.grade === 'B').length);
+  let countC = $derived(filteredRestaurants.filter(r => r.grade === 'C').length);
+
   // Display limited results //
-  let displayed = $derived(restaurants.slice(0, 50));
+  let displayed = $derived(filteredRestaurants.slice(0, 50));
 
 </script>
 
@@ -95,6 +102,24 @@ This is your page!
   />
 
   <!-- Data Visualization: A table of restaurant inspection data -->
+
+  <!-- Big Number Dashboard -->
+  <Dashboard>
+    <BigNumber
+      number={countA.toLocaleString('en-US')}
+      label="Grade A Restaurants"
+    />
+<BigNumber
+  number={countB.toLocaleString('en-US')}
+  label="Grade B Restaurants"
+/>
+
+<BigNumber
+  number={countC.toLocaleString('en-US')}
+  label="Grade C Restaurants"
+/>
+</Dashboard>
+
 <div class="filters">
   <label for="borough">Borough</label>
   <select id="borough" bind:value={selectedBorough}>
@@ -129,7 +154,7 @@ This is your page!
     <input id="search" type="text" bind:value={searchQuery} placeholder="e.g. Pizza" />
   </div>
 
-<p class="count">Showing {displayed.length} of {restaurants.length} restaurants</p>
+<p class="count">Showing {displayed.length} of {filteredRestaurants.length.toLocaleString('en-US')} restaurants</p>
 <RestaurantTable data={displayed} />
 
 
