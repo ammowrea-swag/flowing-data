@@ -8,11 +8,13 @@ This is your page!
   import ArticleBody from '$lib/components/ArticleBody.svelte';
   import Image from '$lib/components/Image.svelte';
   import RelatedLinks from '$lib/components/RelatedLinks.svelte';
+  import RestaurantTable from '$lib/components/RestaurantTable.svelte';
 
   // Article metadata
   let headline = 'Become a force for good. Join our next class.';
   let byline = 'NYCity News Service';
   let pubDate = '2026-01-31';
+
 
   // Related stories
   const relatedStories = [
@@ -20,6 +22,52 @@ This is your page!
     { headline: 'How to install, configure and use Visual Studio Code, GitHub and Copilot', href: 'https://palewi.re/docs/coding-the-news/scripts/week-1/' },
     { headline: "How to publish a website with Node.JS and GitHub Actions", href:"https://palewi.re/docs/coding-the-news/scripts/week-2/"},
   ];
+
+  // Data //
+    let { data } = $props(); 
+
+    // set boro pulldown filter// 
+    let selectedBorough = $state("");
+ 
+  // Get unique cuisines for the filter dropdown
+     let selectedCuisine = $state("");
+
+  // Search query filter //
+  let searchQuery = $state("");
+
+  // Get unique cuisines for the filter dropdown //
+  let cuisines = $derived(
+    data?.restaurants 
+      ? [...new Set(data.restaurants.map(r => r.cuisine_description))].sort()
+      : []
+  );
+
+  // Get unique grades for the filter dropdown //
+  let grades = $derived(
+    data?.restaurants 
+      ? [...new Set(data.restaurants.map(r => r.grade).filter(g => g))].sort()
+      : []
+  );
+
+  // Grade filter //
+  let selectedGrade = $state("");
+
+  // Filter restaurants based on selected filters //
+  let restaurants = $derived(
+    data?.restaurants
+      ? data.restaurants.filter(r => {
+          if (selectedBorough !== '' && r.boro !== selectedBorough) return false;
+          if (selectedCuisine !== '' && r.cuisine_description !== selectedCuisine) return false;
+          if (selectedGrade !== '' && r.grade !== selectedGrade) return false;
+          if (searchQuery !== '' && !r.dba.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+          return true;
+        })
+      : []
+  );
+
+  // Display limited results //
+  let displayed = $derived(restaurants.slice(0, 50));
+
 </script>
 
 <!-- This sets the page title in the browser tab -->
@@ -46,6 +94,45 @@ This is your page!
     credit="Craig Newmark Graduate School of Journalism"
   />
 
+  <!-- Data Visualization: A table of restaurant inspection data -->
+<div class="filters">
+  <label for="borough">Borough</label>
+  <select id="borough" bind:value={selectedBorough}>
+    <option value="">All boroughs</option>
+    <option value="Manhattan">Manhattan</option>
+    <option value="Brooklyn">Brooklyn</option>
+    <option value="Queens">Queens</option>
+    <option value="Bronx">Bronx</option>
+    <option value="Staten Island">Staten Island</option>
+  </select>
+
+  <label for="cuisine">Cuisine</label>
+  <select id="cuisine" bind:value={selectedCuisine}>
+    <option value="">All cuisines</option>
+    {#each cuisines as cuisine}
+      <option value={cuisine}>{cuisine}</option>
+    {/each}
+  </select>
+
+   <label for="grade">Grade</label>
+  <select id="grade" bind:value={selectedGrade}>
+    <option value="">All grades</option>
+    {#each grades as grade}
+      <option value={grade}>{grade}</option>
+    {/each}
+  </select>
+
+</div>
+
+  <div>
+    <label for="search">Search by name</label>
+    <input id="search" type="text" bind:value={searchQuery} placeholder="e.g. Pizza" />
+  </div>
+
+<p class="count">Showing {displayed.length} of {restaurants.length} restaurants</p>
+<RestaurantTable data={displayed} />
+
+
   <!-- Article Body: The main story text with proper typography -->
   <ArticleBody>
     <p>
@@ -56,33 +143,7 @@ This is your page!
       We fashioned a school to teach the latest storytelling, entrepreneurial, and technological skills alongside reporting, writing, and ethics. Beyond that, we’ve crafted a culture that spurns complacency, that isn’t afraid to pivot before the ground under us shifts.
     </p>
 
-    <p>
-      Our mission is to serve the public interest – by training new journalists from varied economic, racial, and cultural backgrounds who will bring much-needed diversity to newsrooms, by helping mid-career journalists retool their skills, and by partnering with other media organizations to find new paths to excellence.
-    </p>
 
-    <p>
-      Our low tuition rates, along with the added backing of private donors, allow candidates for our master’s degrees in journalism and engagement journalism to receive a world-class education at an affordable price. We also offer a unique bilingual master’s in journalism for students fluent in English and Spanish.
-    </p>
-
-    <p>
-      Our three media centers provide research, training, thought leadership, industry meet-ups, and financial support for quality journalistic work.
-    </p>
-
-    <p>
-      We also offer a robust professional education program through regular evening and weekend workshops. And we support in-depth reporting projects of professional journalists through fellowship grants.
-    </p>
-
-    <p>
-      Classes are led by accomplished full-time faculty and adjuncts, who tap their networks to help students and graduates find internships, freelance opportunities and — the ultimate prize — jobs.
-    </p>
-
-    <p>
-      At a time when our profession is reeling from financial pressures and lack of trust, the Newmark Graduate School of Journalism is committed to producing the next generation of skilled, ethically minded, and diverse journalists.
-    </p>
-
-    <p>
-      We invite you to be part of our world.
-    </p>
   </ArticleBody>
 
   <!-- Related Stories: Links to other articles -->
@@ -97,5 +158,47 @@ This is your page!
   /* Styles here only apply to this page */
   .container {
     padding: var(--spacing-lg) var(--spacing-md);
+  } 
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    padding: 1rem;
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
   }
+
+  label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+
+ select {
+    display: block;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid #ccc;
+    border-radius: 3px }
+
+  input[type="text"] {
+  display: block;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+  .count {
+    font-size: 0.8rem;
+    color: #888;
+    margin: 0 0 0.5rem;
+  }
+
 </style>
